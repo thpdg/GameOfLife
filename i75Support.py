@@ -1,12 +1,17 @@
 import sys
+import random
 
 colorChart = {}
+BLACK = None
 initialized = False
 
 def defineColors(colorChart:dict, graphics, paletteName="default"):
     # Required Colors
-    colorChart["White"] = graphics.create_pen(64, 64, 64)
-    colorChart["Black"] = graphics.create_pen(0,0,0)
+#     colorChart["White"] = graphics.create_pen(64, 64, 64)
+#     colorChart["red"] = graphics.create_pen(64, 0, 0)
+    # colorChart["Black"] = graphics.create_pen(0,0,0)
+    global BLACK
+    BLACK = graphics.create_pen(0,0,0)
 
     if paletteName == "default":
         colorChart["Red"] = graphics.create_pen(255,0,0)
@@ -16,7 +21,7 @@ def defineColors(colorChart:dict, graphics, paletteName="default"):
         colorChart["medium"] = graphics.create_pen(48,98,48)
         colorChart["light"] = graphics.create_pen(139,172,15)
         colorChart["highlight"] = graphics.create_pen(155,188,15)
-        colorChart["off"] = graphics.create_pen(170,170,170)
+        # colorChart["off"] = graphics.create_pen(170,170,170)
 
     if paletteName == "red":
         colorChart["dark"] = graphics.create_pen(138,19,16)
@@ -58,25 +63,27 @@ def initializei75():
         defineColors(colorChart,graphics,"gameboy")
         initialized = True
 
-def drawBoard(boardData, colorFunction)->bool:
+def drawBoard(boardData, colorFunction, debug=False)->bool:
     if not initialized:
         print("LED Board Not Initialized")
         return False
     else:
-        print("Updating LED Board")
+        if debug:
+            print("Updating LED Board")
     
     clear_board()
     
     for y in range(32):
         for x in range(32):
             if boardData[x][y].alive:
-                neighbors = colorFunction(boardData,x,y)
-                graphics.set_pen(colorChart["highlight"])
-                if neighbors < 2 or neighbors > 3:
-                    graphics.set_pen(colorChart["dark"])
+                graphics.set_pen(random.choice(list(colorChart.values())))
+                # neighbors = colorFunction(boardData,x,y)
+                # graphics.set_pen(colorChart["highlight"])
+                # if neighbors < 2 or neighbors > 3:
+                #     graphics.set_pen(colorChart["dark"])
             else:
-                graphics.set_pen(colorChart["Black"])
+                graphics.set_pen(BLACK)
             graphics.pixel(x,y)
     i75.update()
-    print("Board updated")
+    if debug: print("Board updated")
     return True
