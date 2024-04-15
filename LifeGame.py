@@ -97,6 +97,10 @@ def countNeighbors(boardData, cell_x:int, cell_y:int) -> int:
         for y in [cell_y-1,cell_y,cell_y+1]:
             if cell_x == x and cell_y == y:
                 continue
+            if x < 0:
+                continue
+            if y < 0:
+                continue
             if x >= 32:
                 continue
             if y >= 32:
@@ -197,7 +201,6 @@ def prepBoard(boardData):
     # boardData[3][2].alive = True
     # boardData[3][3].alive = True
     # boardData = drawAt(boardData,BLINKER,5,10)
-    # if boardData is None: print("NONE BOARD?")
     # boardData = drawAt(boardData,BLINKER,10,5)
     randomFill(boardData,0,0,32,32)
     return boardData
