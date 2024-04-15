@@ -15,10 +15,7 @@ import time
 
 
 class Cell:
-    def __init__(self, red=0, green=0, blue=0, alive=False):
-        self.red = red
-        self.green = green
-        self.blue = blue
+    def __init__(self, alive=False):
         self.alive = alive
 
     def __str__(self):
@@ -26,18 +23,20 @@ class Cell:
             return "X"
         return " "
 
-GAME_board = [[Cell(0,0,0,False) for _ in range(32)] for _ in range(32)]
-# LED_board = [[Cell(0,0,0,False) for _ in range(32)] for _ in range(32)]
+GAME_board = [[Cell(False) for _ in range(32)] for _ in range(32)]
+
+# Piece patterns
 # GLIDER = [[],[],[]]
 BLINKER = [[True],[True],[True]]
 
+# Randomly fill a section of the board with random live cells (1:3 odds)
 def randomFill(boardData, dest_x, dest_y, x_size, y_size):
     for row in range(dest_x,dest_x + x_size):
         for col in range(dest_y, dest_y + y_size):
             # boardData[row][col].alive = bool(random.getrandbits(1))
             boardData[row][col].alive = bool(random.choice([True,False,False]))
 
-def drawAt(boardData, form, dest_x, dest_y):
+def addAt(boardData, form, dest_x, dest_y):
     x = dest_x
     y = dest_y
 
@@ -88,6 +87,7 @@ def printBoard(boardData):
 #         print()  # Move to the next line after printing a row
 
 def countNeighbors(boardData, cell_x:int, cell_y:int) -> int:
+    # starttime = time.time_ns()
     neighborCount = 0
     if boardData[cell_x][cell_y] is None:
         # print("No cell at " + str(cell_x) + ":" + str(cell_y))
@@ -108,6 +108,7 @@ def countNeighbors(boardData, cell_x:int, cell_y:int) -> int:
             if boardData[x][y].alive:
                 neighborCount += 1
     if sys.implementation.name == 'micropython':
+        # print((time.time_ns()-starttime)/1000)
         return neighborCount
     
     if neighborCount > 0:
@@ -116,50 +117,38 @@ def countNeighbors(boardData, cell_x:int, cell_y:int) -> int:
         f.close()
     return neighborCount
 
-def analyzeCell(boardData,cell_x,cell_y):
-    outCell = Cell(boardData[cell_x][cell_y].red,boardData[cell_x][cell_y].green,boardData[cell_x][cell_y].blue,False)
+def analyzeCell(boardData,cell_x,cell_y, debug=False)->bool:
     neighborCount = countNeighbors(boardData,cell_x,cell_y)
-    # print("Cell count for " + str(cell_x) + ":" + str(cell_y) + "->" + str(neighborCount))
-    # f = open("demofile2.txt", "a")
-    # if neighborCount > 0:
-    #     f.write(" Cell count for " + str(cell_x) + ":" + str(cell_y) + "->" + str(neighborCount) + "\n")
-    # f.close()
+    if debug:
+        print("Cell count for " + str(cell_x) + ":" + str(cell_y) + "->" + str(neighborCount))
+
     if not boardData[cell_x][cell_y].alive:
         if neighborCount == 3:
             # Revive Cell
-            # print(" Reviving cell at " + str(cell_x) + ":" + str(cell_y))
-            # f.write("  Reviving dead cell at " + str(cell_x) + ":" + str(cell_y) + "-> neighbors:" + str(neighborCount) + "\n")
-            outCell.alive = True
-        # else:
-            # print(" Dead cell staying dead")
-            # f.write("  Dead cell staying dead\n")
+            return True
     else:
-        # f.write("Checking underpopulated at  " + str(cell_x) + ":" + str(cell_y) + "->" + str(neighborCount) + " vs " + str(2) + "[" + str(neighborCount<2) + "]\n")
         if neighborCount < 2: # Underpopulated
-            # f.write("  Underpopulated cell at " + str(cell_x) + ":" + str(cell_y) + "\n")
-            outCell.alive = False
+            return False
         
         if neighborCount > 3: # Overpopulated
-            # f.write("  Overpopulated cell at " + str(cell_x) + ":" + str(cell_y) + "\n")
-            outCell.alive = False
+            return False
 
         if neighborCount == 2 or neighborCount == 3: # Stable (adding since making default cell dead)
-            # f.write("  Stable cell at " + str(cell_x) + ":" + str(cell_y) + " with " + str(neighborCount) + "neighbors.\n")
-            outCell.alive = True
-    # f.close()
-    return outCell
+            return True
+    return False
 
-def incrementBoard(boardData):
-    print("Incrementing Board...", end="")
-    outBoard = [[None for _ in range(32)] for _ in range(32)]
+def incrementBoard(boardData, debug=False):
+    starttime = time.time_ns()
+    if debug: print("Incrementing Board...")    
+    outBoard = [[Cell(False) for _ in range(32)] for _ in range(32)]
     for y in range(32):
-        print("-" + str(y) + " ", end="")
+#         print("-" + str(y) + " ", end="")
         for x in range(32):
-            print(str(x),end="")
-            outBoard[x][y] = analyzeCell(boardData,x,y)
-            print(",",end="")
-        print()
-    print("Complete")
+#             print(str(x),end="")
+            outBoard[x][y].alive = analyzeCell(boardData,x,y)
+#             print(",",end="")
+#         print()
+    print("Completed board in " + str((time.time_ns()-starttime)/1000000) + "ms")
     return outBoard
 
 def prepBoard(boardData):
